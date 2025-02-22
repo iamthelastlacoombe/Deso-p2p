@@ -1,0 +1,35 @@
+workflows:
+  ios-ad-hoc:
+    name: iOS Ad Hoc
+    instance_type: mac_mini_m1
+    environment:
+      vars:
+        XCODE_WORKSPACE: "DeSoP2P.xcworkspace" # Change if using different workspace name
+        XCODE_SCHEME: "DeSoP2P" # Change if using different scheme name
+      xcode: latest
+    scripts:
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$(xcode-project detect-bundle-id)" \
+            --type IOS_APP_ADHOC \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build iOS Ad Hoc
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --config Release
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      email:
+        recipients:
+          - your.email@example.com # Replace with your email
+        notify:
+          success: true
+          failure: true
